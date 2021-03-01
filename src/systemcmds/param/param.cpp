@@ -44,6 +44,7 @@
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/posix.h>
 
+#include <float.h>
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -83,13 +84,16 @@ enum class COMPARE_ERROR_LEVEL {
 static int 	do_save(const char *param_file_name);
 static int	do_save_default();
 static int 	do_load(const char *param_file_name);
-static int	do_import(const char *param_file_name);
+static int	do_import(const char *param_file_name = nullptr);
 static int	do_show(const char *search_string, bool only_changed);
+static int	do_show_for_airframe();
 static int	do_show_all();
 static int	do_show_quiet(const char *param_name);
 static int	do_show_index(const char *index, bool used_index);
 static void	do_show_print(void *arg, param_t param);
+static void	do_show_print_for_airframe(void *arg, param_t param);
 static int	do_set(const char *name, const char *val, bool fail_on_not_found);
+static int	do_set_custom_default(const char *name, const char *val);
 static int	do_compare(const char *name, char *vals[], unsigned comparisons, enum COMPARE_OPERATOR cmd_op,
 			   enum COMPARE_ERROR_LEVEL err_level);
 static int 	do_reset_all(const char *excludes[], int num_excludes);
@@ -141,9 +145,15 @@ $ reboot
 	PRINT_MODULE_USAGE_PARAM_FLAG('q', "quiet mode, print only param value (name needs to be exact)", true);
 	PRINT_MODULE_USAGE_ARG("<filter>", "Filter by param name (wildcard at end allowed, eg. sys_*)", true);
 
+	PRINT_MODULE_USAGE_COMMAND_DESCR("show-for-airframe", "Show changed params for airframe config");
+
 	PRINT_MODULE_USAGE_COMMAND_DESCR("status", "Print status of parameter system");
 
 	PRINT_MODULE_USAGE_COMMAND_DESCR("set", "Set parameter to a value");
+	PRINT_MODULE_USAGE_ARG("<param_name> <value>", "Parameter name and value to set", false);
+	PRINT_MODULE_USAGE_ARG("fail", "If provided, let the command fail if param is not found", true);
+
+	PRINT_MODULE_USAGE_COMMAND_DESCR("set-default", "Set parameter default to a value");
 	PRINT_MODULE_USAGE_ARG("<param_name> <value>", "Parameter name and value to set", false);
 	PRINT_MODULE_USAGE_ARG("fail", "If provided, let the command fail if param is not found", true);
 
@@ -209,7 +219,7 @@ param_main(int argc, char *argv[])
 				return do_import(argv[2]);
 
 			} else {
-				return do_import(param_get_default_file());
+				return do_import();
 			}
 		}
 
@@ -222,9 +232,11 @@ param_main(int argc, char *argv[])
 			}
 
 			const char *default_file = param_get_default_file();
+
 			if (default_file) {
 				PX4_INFO("selected parameter default file %s", default_file);
 			}
+
 			return 0;
 		}
 
@@ -246,6 +258,7 @@ param_main(int argc, char *argv[])
 					if (argc >= 4) {
 						return do_show_quiet(argv[3]);
 					}
+
 				} else {
 					return do_show(argv[2], false);
 				}
@@ -253,6 +266,10 @@ param_main(int argc, char *argv[])
 			} else {
 				return do_show(nullptr, false);
 			}
+		}
+
+		if (!strcmp(argv[1], "show-for-airframe")) {
+			return do_show_for_airframe();
 		}
 
 		if (!strcmp(argv[1], "status")) {
@@ -277,11 +294,23 @@ param_main(int argc, char *argv[])
 			}
 		}
 
+		if (!strcmp(argv[1], "set-default")) {
+			if (argc == 4) {
+				return do_set_custom_default(argv[2], argv[3]);
+
+			} else {
+				PX4_ERR("not enough arguments.\nTry 'param set-default PARAM_NAME 3'");
+				return 1;
+			}
+		}
+
 		if (!strcmp(argv[1], "compare")) {
-			if(argc >= 5 && !strcmp(argv[2], "-s")) {
+			if (argc >= 5 && !strcmp(argv[2], "-s")) {
 				return do_compare(argv[3], &argv[4], argc - 4, COMPARE_OPERATOR::EQUAL, COMPARE_ERROR_LEVEL::SILENT);
+
 			} else if (argc >= 4) {
 				return do_compare(argv[2], &argv[3], argc - 3, COMPARE_OPERATOR::EQUAL, COMPARE_ERROR_LEVEL::DO_ERROR);
+
 			} else {
 				PX4_ERR("not enough arguments.\nTry 'param compare PARAM_NAME 3'");
 				return 1;
@@ -289,10 +318,12 @@ param_main(int argc, char *argv[])
 		}
 
 		if (!strcmp(argv[1], "greater")) {
-			if(argc >= 5 && !strcmp(argv[2], "-s")) {
+			if (argc >= 5 && !strcmp(argv[2], "-s")) {
 				return do_compare(argv[3], &argv[4], argc - 4, COMPARE_OPERATOR::GREATER, COMPARE_ERROR_LEVEL::SILENT);
+
 			} else if (argc >= 4) {
 				return do_compare(argv[2], &argv[3], argc - 3, COMPARE_OPERATOR::GREATER, COMPARE_ERROR_LEVEL::DO_ERROR);
+
 			} else {
 				PX4_ERR("not enough arguments.\nTry 'param greater PARAM_NAME 3'");
 				return 1;
@@ -321,6 +352,7 @@ param_main(int argc, char *argv[])
 		if (!strcmp(argv[1], "touch")) {
 			if (argc >= 3) {
 				return do_touch((const char **) &argv[2], argc - 2);
+
 			} else {
 				PX4_ERR("not enough arguments.");
 				return 1;
@@ -373,7 +405,7 @@ do_save(const char *param_file_name)
 		return 1;
 	}
 
-	int result = param_export(fd, false);
+	int result = param_export(fd, false, nullptr);
 	close(fd);
 
 	if (result < 0) {
@@ -391,6 +423,7 @@ static int
 do_load(const char *param_file_name)
 {
 	int fd = -1;
+
 	if (param_file_name) { // passing NULL means to select the flash storage
 		fd = open(param_file_name, O_RDONLY);
 
@@ -401,6 +434,7 @@ do_load(const char *param_file_name)
 	}
 
 	int result = param_load(fd);
+
 	if (fd >= 0) {
 		close(fd);
 	}
@@ -408,9 +442,11 @@ do_load(const char *param_file_name)
 	if (result < 0) {
 		if (param_file_name) {
 			PX4_ERR("importing from '%s' failed (%i)", param_file_name, result);
+
 		} else {
 			PX4_ERR("importing failed (%i)", result);
 		}
+
 		return 1;
 	}
 
@@ -420,7 +456,15 @@ do_load(const char *param_file_name)
 static int
 do_import(const char *param_file_name)
 {
+	bool mark_saved = false;
+
+	if (param_file_name == nullptr) {
+		param_file_name = param_get_default_file();
+		mark_saved = true; // if imported from default storage, mark as saved
+	}
+
 	int fd = -1;
+
 	if (param_file_name) { // passing NULL means to select the flash storage
 		fd = open(param_file_name, O_RDONLY);
 
@@ -430,7 +474,8 @@ do_import(const char *param_file_name)
 		}
 	}
 
-	int result = param_import(fd);
+	int result = param_import(fd, mark_saved);
+
 	if (fd >= 0) {
 		close(fd);
 	}
@@ -438,9 +483,11 @@ do_import(const char *param_file_name)
 	if (result < 0) {
 		if (param_file_name) {
 			PX4_ERR("importing from '%s' failed (%i)", param_file_name, result);
+
 		} else {
 			PX4_ERR("importing failed (%i)", result);
 		}
+
 		return 1;
 	}
 
@@ -461,6 +508,16 @@ do_show(const char *search_string, bool only_changed)
 	param_foreach(do_show_print, (char *)search_string, only_changed, !only_changed);
 	PARAM_PRINT("\n %u/%u parameters used.\n", param_count_used(), param_count());
 
+	return 0;
+}
+
+static int
+do_show_for_airframe()
+{
+	PARAM_PRINT("if [ $AUTOCNF = yes ]\n");
+	PARAM_PRINT("then\n");
+	param_foreach(do_show_print_for_airframe, nullptr, true, true);
+	PARAM_PRINT("fi\n");
 	return 0;
 }
 
@@ -578,7 +635,7 @@ do_show_print(void *arg, param_t param)
 	const char *p_name = (const char *)param_name(param);
 
 	/* print nothing if search string is invalid and not matching */
-	if (!(arg == nullptr)) {
+	if (arg != nullptr) {
 
 		/* start search */
 		const char *ss = search_string;
@@ -640,6 +697,54 @@ do_show_print(void *arg, param_t param)
 
 	default:
 		PARAM_PRINT("<unknown type %d>\n", 0 + param_type(param));
+		return;
+	}
+
+	PARAM_PRINT("<error fetching parameter %lu>\n", (unsigned long)param);
+}
+
+static void
+do_show_print_for_airframe(void *arg, param_t param)
+{
+	// exceptions
+	const char *p_name = param_name(param);
+
+	if (!p_name || param_is_volatile(param)) {
+		return;
+	}
+
+	if (!strcmp(p_name, "SYS_AUTOSTART") || !strcmp(p_name, "SYS_AUTOCONFIG")) {
+		return;
+	}
+
+	if (!strncmp(p_name, "RC", 2) || !strncmp(p_name, "TC_", 3) || !strncmp(p_name, "CAL_", 4) ||
+	    !strncmp(p_name, "SENS_BOARD_", 11) || !strcmp(p_name, "SENS_DPRES_OFF") ||
+	    !strcmp(p_name, "MAV_TYPE")) {
+		return;
+	}
+
+	int32_t i;
+	float f;
+	PARAM_PRINT("\tparam set %s ", p_name);
+
+	switch (param_type(param)) {
+	case PARAM_TYPE_INT32:
+		if (!param_get(param, &i)) {
+			PARAM_PRINT("%ld\n", (long)i);
+			return;
+		}
+
+		break;
+
+	case PARAM_TYPE_FLOAT:
+		if (!param_get(param, &f)) {
+			PARAM_PRINT("%4.4f\n", (double)f);
+			return;
+		}
+
+		break;
+
+	default:
 		return;
 	}
 
@@ -716,7 +821,62 @@ do_set(const char *name, const char *val, bool fail_on_not_found)
 }
 
 static int
-do_compare(const char *name, char *vals[], unsigned comparisons, enum COMPARE_OPERATOR cmp_op, enum COMPARE_ERROR_LEVEL err_level)
+do_set_custom_default(const char *name, const char *val)
+{
+	param_t param = param_find_no_notification(name);
+
+	/* set nothing if parameter cannot be found */
+	if (param == PARAM_INVALID) {
+		/* param not found - fail silenty in scripts as it prevents booting */
+		PX4_ERR("Parameter %s not found.", name);
+		return PX4_ERROR;
+	}
+
+	// Set parameter if type is known and conversion from string to value turns out fine
+	switch (param_type(param)) {
+	case PARAM_TYPE_INT32: {
+			int32_t i;
+
+			if (param_get_default_value(param, &i) == PX4_OK) {
+				/* convert string */
+				char *end;
+				int32_t newval = strtol(val, &end, 10);
+
+				if ((i != newval) && (param_set_default_value(param, &newval) == PX4_OK)) {
+					PARAM_PRINT(" parameter default: %s %d -> %d\n", param_name(param), i, newval);
+				}
+			}
+		}
+
+		break;
+
+	case PARAM_TYPE_FLOAT: {
+			float f;
+
+			if (param_get_default_value(param, &f) == PX4_OK) {
+				/* convert string */
+				char *end;
+				float newval = strtod(val, &end);
+
+				if ((fabsf(f - newval) > FLT_EPSILON) && (param_set_default_value(param, &newval) == PX4_OK)) {
+					PARAM_PRINT(" parameter default: %s %4.2f -> %4.2f\n", param_name(param), (double)f, (double)newval);
+				}
+			}
+		}
+
+		break;
+
+	default:
+		PX4_ERR("<unknown / unsupported type %d>\n", 0 + param_type(param));
+		return 1;
+	}
+
+	return 0;
+}
+
+static int
+do_compare(const char *name, char *vals[], unsigned comparisons, enum COMPARE_OPERATOR cmp_op,
+	   enum COMPARE_ERROR_LEVEL err_level)
 {
 	int32_t i;
 	float f;
@@ -725,10 +885,10 @@ do_compare(const char *name, char *vals[], unsigned comparisons, enum COMPARE_OP
 	/* set nothing if parameter cannot be found */
 	if (param == PARAM_INVALID) {
 		/* param not found */
-		if(err_level == COMPARE_ERROR_LEVEL::DO_ERROR)
-		{
+		if (err_level == COMPARE_ERROR_LEVEL::DO_ERROR) {
 			PX4_ERR("Parameter %s not found", name);
 		}
+
 		return 1;
 	}
 
@@ -821,5 +981,6 @@ do_touch(const char *params[], int num_params)
 			PX4_ERR("param %s not found", params[i]);
 		}
 	}
+
 	return 0;
 }

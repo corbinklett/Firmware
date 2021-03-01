@@ -8,6 +8,7 @@ px4_add_board(
 	LABEL default
 	PLATFORM posix
 	ARCHITECTURE cortex-a53
+	ROMFSROOT px4fmu_common
 	TOOLCHAIN arm-linux-gnueabihf
 	TESTING
 	DRIVERS
@@ -22,7 +23,6 @@ px4_add_board(
 		gps
 		#imu # all available imu drivers
 		imu/invensense/mpu9250
-		linux_pwm_out
 		#magnetometer # all available magnetometer drivers
 		magnetometer/hmc5883
 		pca9685_pwm_out
@@ -39,6 +39,7 @@ px4_add_board(
 		dataman
 		ekf2
 		events
+		flight_mode_manager
 		fw_att_control
 		fw_pos_control_l1
 		land_detector
@@ -71,14 +72,17 @@ px4_add_board(
 		perf
 		pwm
 		sd_bench
+		system_time
 		shutdown
 		tests # tests and test runner
 		#top
 		topic_listener
 		tune_control
+		uorb
 		ver
 		work_queue
 	EXAMPLES
+		fake_gps
 		dyn_hello # dynamically loading modules example
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello

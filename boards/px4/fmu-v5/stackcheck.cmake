@@ -10,6 +10,7 @@ px4_add_board(
 	IO px4_io-v2_default
 	TESTING
 	#UAVCAN_INTERFACES 2
+	CONSTRAINED_FLASH
 	SERIAL_PORTS
 		GPS1:/dev/ttyS0
 		TEL1:/dev/ttyS1
@@ -28,20 +29,18 @@ px4_add_board(
 		gps
 		#heater
 		#imu # all available imu drivers
-		#imu/adis16448
+		#imu/analog_devices/adis16448
 		#imu/adis16477
 		#imu/adis16497
 		#imu/bosch/bmi055
 		#imu/invensense/icm20602
 		imu/invensense/icm20689
-		#imu/mpu6000 # legacy icm20602/icm20689 driver
 		#irlock
 		#lights/blinkm
 		lights/rgbled
 		#lights/rgbled_ncp5623c
 		lights/rgbled_pwm
 		magnetometer # all available magnetometer drivers
-		#mkblctrl
 		optical_flow # all available optical flow drivers
 		#osd
 		#pca9685
@@ -55,7 +54,6 @@ px4_add_board(
 		#roboclaw
 		#rpm
 		safety_button
-		#tap_esc
 		telemetry # all available telemetry drivers
 		#test_ppm
 		tone_alarm
@@ -70,6 +68,7 @@ px4_add_board(
 		ekf2
 		#esc_battery
 		events
+		flight_mode_manager
 		fw_att_control
 		fw_pos_control_l1
 		land_detector
@@ -100,6 +99,7 @@ px4_add_board(
 		hardfault_log
 		i2cdetect
 		led_control
+		mft
 		mixer
 		motor_ramp
 		motor_test
@@ -111,14 +111,17 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		system_time
 		tests # tests and test runner
 		top
 		topic_listener
 		tune_control
+		uorb
 		usb_connected
 		ver
 		work_queue
 	EXAMPLES
+		#fake_gps
 		#fake_magnetometer
 		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		#hello

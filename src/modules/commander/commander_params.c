@@ -118,7 +118,7 @@ PARAM_DEFINE_INT32(COM_HLDL_LOSS_T, 120);
 /**
  * High Latency Datalink regain time threshold
  *
- * After a data link loss: after this this amount of seconds with a healthy datalink the 'datalink loss'
+ * After a data link loss: after this number of seconds with a healthy datalink the 'datalink loss'
  * flag is set back to false
  *
  * @group Commander
@@ -174,7 +174,7 @@ PARAM_DEFINE_FLOAT(COM_EF_TIME, 10.0f);
 /**
  * RC loss time threshold
  *
- * After this amount of seconds without RC connection the rc lost flag is set to true
+ * After this amount of seconds without RC connection it's considered lost and not used anymore
  *
  * @group Commander
  * @unit s
@@ -186,19 +186,21 @@ PARAM_DEFINE_FLOAT(COM_EF_TIME, 10.0f);
 PARAM_DEFINE_FLOAT(COM_RC_LOSS_T, 0.5f);
 
 /**
- * RC stick override threshold
+ * Delay between RC loss and configured reaction
  *
- * If an RC stick is moved more than by this amount the system will interpret this as
- * override request by the pilot.
+ * RC signal not updated -> still use data for COM_RC_LOSS_T seconds
+ * Consider RC signal lost -> wait COM_RCL_ACT_T seconds on the spot waiting to regain signal
+ * React with failsafe action NAV_RCL_ACT
+ *
+ * A zero value disables the delay.
  *
  * @group Commander
- * @unit %
- * @min 5
- * @max 80
- * @decimal 0
- * @increment 0.05
+ * @unit s
+ * @min 0.0
+ * @max 25.0
+ * @decimal 3
  */
-PARAM_DEFINE_FLOAT(COM_RC_STICK_OV, 50.0f);
+PARAM_DEFINE_FLOAT(COM_RCL_ACT_T, 15.0f);
 
 /**
  * Home set horizontal threshold
@@ -229,6 +231,18 @@ PARAM_DEFINE_FLOAT(COM_HOME_H_T, 5.0f);
 PARAM_DEFINE_FLOAT(COM_HOME_V_T, 10.0f);
 
 /**
+ * Allows setting the home position after takeoff
+ *
+ * If set to true, the autopilot is allowed to set its home position after takeoff
+ * The true home position is back-computed if a local position is estimate if available.
+ * If no local position is available, home is set to the current position.
+ *
+ * @boolean
+ * @group Commander
+ */
+PARAM_DEFINE_INT32(COM_HOME_IN_AIR, 0);
+
+/**
  * RC control input mode
  *
  * The default value of 0 requires a valid RC transmitter setup.
@@ -253,6 +267,7 @@ PARAM_DEFINE_INT32(COM_RC_IN_MODE, 0);
  * @group Commander
  * @min 100
  * @max 1500
+ * @unit ms
  */
 PARAM_DEFINE_INT32(COM_RC_ARM_HYST, 1000);
 
@@ -292,7 +307,8 @@ PARAM_DEFINE_FLOAT(COM_DISARM_PRFLT, 10.0f);
  * The default allows to arm the vehicle without GPS signal.
  *
  * @group Commander
- * @boolean
+ * @value 0 Allow arming without GPS
+ * @value 1 Require GPS lock to arm
  */
 PARAM_DEFINE_INT32(COM_ARM_WO_GPS, 1);
 
@@ -559,31 +575,6 @@ PARAM_DEFINE_FLOAT(COM_ARM_EKF_HGT, 1.0f);
 PARAM_DEFINE_FLOAT(COM_ARM_EKF_YAW, 0.5f);
 
 /**
- * Maximum value of EKF accelerometer delta velocity bias estimate that will allow arming.
- * Note: ekf2 will limit the delta velocity bias estimate magnitude to be less than EKF2_ABL_LIM * FILTER_UPDATE_PERIOD_MS * 0.001 so this parameter must be less than that to be useful.
- *
- * @group Commander
- * @unit m/s
- * @min 0.001
- * @max 0.01
- * @decimal 4
- * @increment 0.0001
- */
-PARAM_DEFINE_FLOAT(COM_ARM_EKF_AB, 0.0022f);
-
-/**
- * Maximum value of EKF gyro delta angle bias estimate that will allow arming
- *
- * @group Commander
- * @unit rad
- * @min 0.0001
- * @max 0.0017
- * @decimal 4
- * @increment 0.0001
- */
-PARAM_DEFINE_FLOAT(COM_ARM_EKF_GB, 0.0011f);
-
-/**
  * Maximum accelerometer inconsistency between IMU units that will allow arming
  *
  * @group Commander
@@ -630,22 +621,44 @@ PARAM_DEFINE_INT32(COM_ARM_MAG_ANG, 45);
 PARAM_DEFINE_INT32(COM_ARM_MAG_STR, 1);
 
 /**
+ * Rearming grace period
+ *
+ * Re-arming grace allows to rearm the drone with manual command without running prearmcheck during 5 s after disarming.
+ *
+ * @group Commander
+ * @boolean
+ */
+PARAM_DEFINE_INT32(COM_REARM_GRACE, 1);
+
+/**
  * Enable RC stick override of auto and/or offboard modes
  *
- * When RC stick override is enabled, moving the RC sticks immediately gives control back
- * to the pilot (switches to manual position mode):
- * bit 0: Enable for auto modes (except for in critical battery reaction),
- * bit 1: Enable for offboard mode.
- *
- * Only has an effect on multicopters, and VTOLS in multicopter mode.
+ * When RC stick override is enabled, moving the RC sticks more than COM_RC_STICK_OV from
+ * their center position immediately gives control back to the pilot by switching to Position mode.
+ * Note: Only has an effect on multicopters, and VTOLs in multicopter mode.
  *
  * @min 0
  * @max 3
- * @bit 0 Enable override in auto modes
- * @bit 1 Enable override in offboard mode
+ * @bit 0 Enable override during auto modes (except for in critical battery reaction)
+ * @bit 1 Enable override during offboard mode
  * @group Commander
  */
 PARAM_DEFINE_INT32(COM_RC_OVERRIDE, 1);
+
+/**
+ * RC stick override threshold
+ *
+ * If COM_RC_OVERRIDE is enabled and the joystick input controlling the horizontally axis (right stick for RC in mode 2)
+ * is moved more than this threshold from the center the autopilot switches to position mode and the pilot takes over control.
+ *
+ * @group Commander
+ * @unit %
+ * @min 5
+ * @max 80
+ * @decimal 0
+ * @increment 0.05
+ */
+PARAM_DEFINE_FLOAT(COM_RC_STICK_OV, 30.0f);
 
 /**
  * Require valid mission to arm
@@ -671,31 +684,52 @@ PARAM_DEFINE_INT32(COM_ARM_MIS_REQ, 0);
 PARAM_DEFINE_INT32(COM_POSCTL_NAVL, 0);
 
 /**
- * Arm authorization parameters, this uint32_t will be split between starting from the LSB:
- * - 8bits to authorizer system id
- * - 16bits to authentication method parameter, this will be used to store a timeout for the first 2 methods but can be used to another parameter for other new authentication methods.
- * - 7bits to authentication method
- * 		- one arm = 0
- * 		- two step arm = 1
- * * the MSB bit is not used to avoid problems in the conversion between int and uint
- *
- * Default value: (10 << 0 | 1000 << 8 | 0 << 24) = 256010
- * - authorizer system id = 10
- * - authentication method parameter = 10000msec of timeout
- * - authentication method = during arm
- * @group Commander
- */
-PARAM_DEFINE_INT32(COM_ARM_AUTH, 256010);
-
-/**
  * Require arm authorization to arm
  *
- * The default allows to arm the vehicle without a arm authorization.
+ * By default off. The default allows to arm the vehicle without a arm authorization.
  *
  * @group Commander
  * @boolean
  */
 PARAM_DEFINE_INT32(COM_ARM_AUTH_REQ, 0);
+
+/**
+ * Arm authorizer system id
+ *
+ * Used if arm authorization is requested by COM_ARM_AUTH_REQ.
+ *
+ * @group Commander
+ */
+PARAM_DEFINE_INT32(COM_ARM_AUTH_ID, 10);
+
+/**
+ * Arm authorization method
+ *
+ * Methods:
+ * - one arm: request authorization and arm when authorization is received
+ * - two step arm: 1st arm command request an authorization and
+ *                 2nd arm command arm the drone if authorized
+ *
+ * Used if arm authorization is requested by COM_ARM_AUTH_REQ.
+ *
+ * @group Commander
+ * @value 0 one arm
+ * @value 1 two step arm
+ */
+PARAM_DEFINE_INT32(COM_ARM_AUTH_MET, 0);
+
+/**
+ * Arm authorization timeout
+ *
+ * Timeout for authorizer answer.
+ * Used if arm authorization is requested by COM_ARM_AUTH_REQ.
+ *
+ * @group Commander
+ * @unit s
+ * @decimal 1
+ * @increment 0.1
+ */
+PARAM_DEFINE_FLOAT(COM_ARM_AUTH_TO, 1);
 
 /**
  * Loss of position failsafe activation delay.
@@ -940,3 +974,29 @@ PARAM_DEFINE_INT32(COM_POWER_COUNT, 1);
  * @decimal 3
  */
 PARAM_DEFINE_FLOAT(COM_LKDOWN_TKO, 3.0f);
+
+/**
+* Enable preflight check for maximal allowed airspeed when arming.
+*
+* Deny arming if the current airspeed measurement is greater than half the stall speed (ASPD_STALL).
+* Excessive airspeed measurements on ground are either caused by wind or bad airspeed calibration.
+*
+* @group Commander
+* @value 0 Disabled
+* @value 1 Enabled
+*/
+PARAM_DEFINE_INT32(COM_ARM_ARSP_EN, 1);
+
+/**
+ * Enable FMU SD card detection check
+ *
+ * This check detects if the FMU SD card is missing.
+ * Depending on the value of the parameter, the check can be
+ * disabled, warn only or deny arming.
+ *
+ * @group Commander
+ * @value 0 Disabled
+ * @value 1 Warning only
+ * @value 2 Enforce SD card presence
+ */
+PARAM_DEFINE_INT32(COM_ARM_SDCARD, 1);

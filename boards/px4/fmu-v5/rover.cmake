@@ -22,18 +22,16 @@ px4_add_board(
 		camera_trigger
 		distance_sensor # all available distance sensor drivers
 		gps
-		imu/adis16448
+		imu/analog_devices/adis16448
 		imu/adis16477
 		imu/adis16497
 		imu/bosch/bmi055
 		imu/invensense/icm20602
 		imu/invensense/icm20689
-		#imu/mpu6000 # legacy icm20602/icm20689 driver
 		lights/rgbled
 		lights/rgbled_ncp5623c
 		lights/rgbled_pwm
 		magnetometer # all available magnetometer drivers
-		mkblctrl
 		optical_flow # all available optical flow drivers
 		pca9685
 		pwm_input
@@ -71,6 +69,7 @@ px4_add_board(
 		hardfault_log
 		i2cdetect
 		led_control
+		mft
 		mixer
 		motor_ramp
 		motor_test
@@ -82,9 +81,11 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		system_time
 		top
 		topic_listener
 		tune_control
+		uorb
 		usb_connected
 		ver
 		work_queue
