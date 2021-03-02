@@ -68,7 +68,11 @@ bool PreFlightCheck::magnetometerCheck(orb_advert_t *mavlink_log_pub, vehicle_st
 
 		if (!calibration_valid) {
 			if (report_fail) {
+<<<<<<< HEAD
 				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Compass %u uncalibrated", instance);
+=======
+				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Compass #%u uncalibrated", instance);
+>>>>>>> stable1.11.3
 			}
 		}
 

@@ -639,8 +639,13 @@ PARAM_DEFINE_INT32(COM_REARM_GRACE, 1);
  *
  * @min 0
  * @max 3
+<<<<<<< HEAD
  * @bit 0 Enable override during auto modes (except for in critical battery reaction)
  * @bit 1 Enable override during offboard mode
+=======
+ * @bit 0 Enable override in auto modes
+ * @bit 1 Enable override in offboard mode
+>>>>>>> stable1.11.3
  * @group Commander
  */
 PARAM_DEFINE_INT32(COM_RC_OVERRIDE, 1);

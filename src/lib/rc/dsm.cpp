@@ -1,6 +1,10 @@
 /****************************************************************************
  *
+<<<<<<< HEAD
  *   Copyright (c) 2012-2021 PX4 Development Team. All rights reserved.
+=======
+ *   Copyright (c) 2012-2020 PX4 Development Team. All rights reserved.
+>>>>>>> stable1.11.3
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -246,6 +250,8 @@ static bool dsm_guess_format(bool reset)
 			} else {
 				channels_found_10.set(channel);
 			}
+<<<<<<< HEAD
+=======
 		}
 
 		if (dsm_decode_channel(raw, 11, channel, value)) {
@@ -256,9 +262,30 @@ static bool dsm_guess_format(bool reset)
 			} else {
 				channels_found_11.set(channel);
 			}
+>>>>>>> stable1.11.3
 		}
 	}
 
+<<<<<<< HEAD
+		if (dsm_decode_channel(raw, 11, channel, value)) {
+			// invalidate entire frame (for 2048) if channel already found, no duplicate channels per DSM frame
+			if (channels_found_11[channel]) {
+				cs11_frame_valid = false;
+
+			} else {
+				channels_found_11.set(channel);
+=======
+	// add valid cs10 channels
+	if (cs10_frame_valid) {
+		for (unsigned channel = 0; channel < DSM_FRAME_CHANNELS; channel++) {
+			if (channels_found_10[channel]) {
+				cs10 |= 1 << channel;
+>>>>>>> stable1.11.3
+			}
+		}
+	}
+
+<<<<<<< HEAD
 	// add valid cs10 channels
 	if (cs10_frame_valid) {
 		for (unsigned channel = 0; channel < DSM_FRAME_CHANNELS; channel++) {
@@ -268,6 +295,8 @@ static bool dsm_guess_format(bool reset)
 		}
 	}
 
+=======
+>>>>>>> stable1.11.3
 	// add valid cs11 channels
 	if (cs11_frame_valid) {
 		for (unsigned channel = 0; channel < DSM_FRAME_CHANNELS; channel++) {

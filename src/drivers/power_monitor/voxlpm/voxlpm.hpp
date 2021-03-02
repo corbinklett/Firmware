@@ -89,7 +89,10 @@
 
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/Subscription.hpp>
+<<<<<<< HEAD
 #include <uORB/SubscriptionInterval.hpp>
+=======
+>>>>>>> stable1.11.3
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/power_monitor.h>
@@ -254,7 +257,11 @@ private:
 	perf_counter_t		_comms_errors;
 
 	uORB::PublicationMulti<power_monitor_s>		_pm_pub_topic{ORB_ID(power_monitor)};
+<<<<<<< HEAD
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
+=======
+	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
+>>>>>>> stable1.11.3
 
 	power_monitor_s 	_pm_status{};
 

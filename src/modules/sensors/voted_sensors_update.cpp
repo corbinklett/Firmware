@@ -256,6 +256,7 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 		}
 	}
 
+<<<<<<< HEAD
 	// publish sensor selection if changed
 	if (_param_sens_imu_mode.get() || (_selection.timestamp == 0)) {
 		if (_selection_changed) {
@@ -264,6 +265,23 @@ void VotedSensorsUpdate::imuPoll(struct sensor_combined_s &raw)
 				_selection.timestamp = hrt_absolute_time();
 				_sensor_selection_pub.publish(_selection);
 				_selection_changed = false;
+=======
+void VotedSensorsUpdate::magPoll(vehicle_magnetometer_s &magnetometer)
+{
+	for (int uorb_index = 0; uorb_index < _mag.subscription_count; uorb_index++) {
+		sensor_mag_s mag_report;
+
+		if (_mag.enabled[uorb_index] && _mag.subscription[uorb_index].update(&mag_report)) {
+
+			// force parameter update (loads calibration) if device id still isn't set
+			if (_mag_device_id[uorb_index] == 0) {
+				parametersUpdate();
+			}
+
+			// First publication with data
+			if (_mag.priority[uorb_index] == 0) {
+				_mag.priority[uorb_index] = _mag.subscription[uorb_index].get_priority();
+>>>>>>> stable1.11.3
 			}
 
 			for (int sensor_index = 0; sensor_index < MAX_SENSOR_COUNT; sensor_index++) {

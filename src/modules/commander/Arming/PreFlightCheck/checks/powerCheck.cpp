@@ -67,7 +67,11 @@ bool PreFlightCheck::powerCheck(orb_advert_t *mavlink_log_pub, const vehicle_sta
 	system_power_sub.update();
 	const system_power_s &system_power = system_power_sub.get();
 
+<<<<<<< HEAD
 	if (system_power.timestamp != 0) {
+=======
+	if (hrt_elapsed_time(&system_power.timestamp) < 1_s) {
+>>>>>>> stable1.11.3
 		int32_t required_power_module_count = 0;
 		param_get(param_find("COM_POWER_COUNT"), &required_power_module_count);
 

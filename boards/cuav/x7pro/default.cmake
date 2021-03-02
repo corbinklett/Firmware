@@ -10,7 +10,11 @@ px4_add_board(
 	BUILD_BOOTLOADER
 	TESTING
 	UAVCAN_INTERFACES 2
+<<<<<<< HEAD
 	UAVCAN_TIMER_OVERRIDE 2
+=======
+	UAVCAN_TIMER_OVERRIDE	  2
+>>>>>>> stable1.11.3
 	SERIAL_PORTS
 		GPS1:/dev/ttyS0
 		TEL1:/dev/ttyS1

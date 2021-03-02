@@ -1888,12 +1888,21 @@ Commander::run()
 			}
 
 			// Auto disarm after 5 seconds if kill switch is engaged
+<<<<<<< HEAD
 			bool auto_disarm = _armed.manual_lockdown;
 
 			// auto disarm if locked down to avoid user confusion
 			//  skipped in HITL where lockdown is enabled for safety
 			if (_status.hil_state != vehicle_status_s::HIL_STATE_ON) {
 				auto_disarm |= _armed.lockdown;
+=======
+			bool auto_disarm = armed.manual_lockdown;
+
+			// auto disarm if locked down to avoid user confusion
+			//  skipped in HITL where lockdown is enabled for safety
+			if (status.hil_state != vehicle_status_s::HIL_STATE_ON) {
+				auto_disarm |= armed.lockdown;
+>>>>>>> stable1.11.3
 			}
 
 			_auto_disarm_killed.set_state_and_update(auto_disarm, hrt_absolute_time());
@@ -2386,6 +2395,28 @@ Commander::run()
 			}
 		}
 
+<<<<<<< HEAD
+=======
+		/* Reset main state to loiter or auto-mission after takeoff is completed.
+		 * Sometimes, the mission result topic is outdated and the mission is still signaled
+		 * as finished even though we only just started with the takeoff. Therefore, we also
+		 * check the timestamp of the mission_result topic. */
+		if (_internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_TAKEOFF
+		    && (_mission_result_sub.get().timestamp >= _internal_state.timestamp)
+		    && _mission_result_sub.get().finished) {
+
+			const bool mission_available = (_mission_result_sub.get().timestamp > _boot_timestamp)
+						       && (_mission_result_sub.get().instance_count > 0) && _mission_result_sub.get().valid;
+
+			if ((_param_takeoff_finished_action.get() == 1) && mission_available) {
+				main_state_transition(status, commander_state_s::MAIN_STATE_AUTO_MISSION, status_flags, &_internal_state);
+
+			} else {
+				main_state_transition(status, commander_state_s::MAIN_STATE_AUTO_LOITER, status_flags, &_internal_state);
+			}
+		}
+
+>>>>>>> stable1.11.3
 		/* check if we are disarmed and there is a better mode to wait in */
 		if (!_armed.armed) {
 			/* if there is no radio control but GPS lock the user might want to fly using

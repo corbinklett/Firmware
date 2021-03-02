@@ -48,6 +48,10 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 			       const bool report_fail)
 {
 	bool success = true; // start with a pass and change to a fail if any test fails
+<<<<<<< HEAD
+=======
+	bool ahrs_present = true;
+>>>>>>> stable1.11.3
 
 	int32_t mag_strength_check_enabled = 1;
 	param_get(param_find("COM_ARM_MAG_STR"), &mag_strength_check_enabled);
@@ -64,8 +68,16 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 	float mag_test_ratio_limit = 1.f;
 	param_get(param_find("COM_ARM_EKF_YAW"), &mag_test_ratio_limit);
 
+<<<<<<< HEAD
 	int32_t arm_without_gps = 0;
 	param_get(param_find("COM_ARM_WO_GPS"), &arm_without_gps);
+=======
+	float ekf_ab_test_limit = 1.f;
+	param_get(param_find("COM_ARM_EKF_AB"), &ekf_ab_test_limit);
+
+	float ekf_gb_test_limit = 1.f;
+	param_get(param_find("COM_ARM_EKF_GB"), &ekf_gb_test_limit);
+>>>>>>> stable1.11.3
 
 	bool gps_success = true;
 	bool gps_present = true;
@@ -153,6 +165,43 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 		goto out;
 	}
 
+<<<<<<< HEAD
+=======
+	// check accelerometer delta velocity bias estimates
+	param_get(param_find("COM_ARM_EKF_AB"), &ekf_ab_test_limit);
+
+	for (uint8_t index = 13; index < 16; index++) {
+		// allow for higher uncertainty in estimates for axes that are less observable to prevent false positives
+		// adjust test threshold by 3-sigma
+		float test_uncertainty = 3.0f * sqrtf(fmaxf(status.covariances[index], 0.0f));
+
+		if (fabsf(status.states[index]) > ekf_ab_test_limit + test_uncertainty) {
+
+			if (report_fail) {
+				PX4_ERR("state %d: |%.8f| > %.8f + %.8f", index, (double)status.states[index], (double)ekf_ab_test_limit,
+					(double)test_uncertainty);
+				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: High Accelerometer Bias");
+			}
+
+			success = false;
+			goto out;
+		}
+	}
+
+	// check gyro delta angle bias estimates
+	param_get(param_find("COM_ARM_EKF_GB"), &ekf_gb_test_limit);
+
+	if (fabsf(status.states[10]) > ekf_gb_test_limit || fabsf(status.states[11]) > ekf_gb_test_limit
+	    || fabsf(status.states[12]) > ekf_gb_test_limit) {
+		if (report_fail) {
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: High Gyro Bias");
+		}
+
+		success = false;
+		goto out;
+	}
+
+>>>>>>> stable1.11.3
 	// If GPS aiding is required, declare fault condition if the required GPS quality checks are failing
 	{
 		const bool ekf_gps_fusion = status.control_mode_flags & (1 << estimator_status_s::CS_GPS);

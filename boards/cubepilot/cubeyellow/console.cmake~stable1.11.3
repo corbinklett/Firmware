@@ -2,12 +2,11 @@
 px4_add_board(
 	PLATFORM nuttx
 	VENDOR cubepilot
-	MODEL cubeorange
+	MODEL cubeyellow
 	LABEL console
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
 	ROMFSROOT px4fmu_common
-	BUILD_BOOTLOADER
 	IO cubepilot_io-v2_default
 	TESTING
 	UAVCAN_INTERFACES 2
@@ -19,11 +18,7 @@ px4_add_board(
 		# CONSOLE:/dev/ttyS4
 		GPS2:/dev/ttyS5
 	DRIVERS
-<<<<<<< HEAD
-		adc/board_adc
-=======
 		adc
->>>>>>> stable1.11.3
 		barometer # all available barometer drivers
 		batt_smbus
 		camera_capture
@@ -34,11 +29,7 @@ px4_add_board(
 		gps
 		#heater
 		#imu # all available imu drivers
-<<<<<<< HEAD
-		imu/analog_devices/adis16448
-=======
 		imu/adis16448
->>>>>>> stable1.11.3
 		imu/adis16477
 		imu/adis16497
 		imu/invensense/icm20602
@@ -49,10 +40,7 @@ px4_add_board(
 		lights/rgbled
 		lights/rgbled_ncp5623c
 		magnetometer # all available magnetometer drivers
-<<<<<<< HEAD
-=======
 		mkblctrl
->>>>>>> stable1.11.3
 		optical_flow # all available optical flow drivers
 		#osd
 		pca9685
@@ -63,10 +51,7 @@ px4_add_board(
 		px4io
 		roboclaw
 		rpm
-<<<<<<< HEAD
-=======
 		tap_esc
->>>>>>> stable1.11.3
 		telemetry # all available telemetry drivers
 		test_ppm
 		tone_alarm
@@ -81,10 +66,6 @@ px4_add_board(
 		ekf2
 		esc_battery
 		events
-<<<<<<< HEAD
-		flight_mode_manager
-=======
->>>>>>> stable1.11.3
 		fw_att_control
 		fw_pos_control_l1
 		land_detector
@@ -115,10 +96,6 @@ px4_add_board(
 		hardfault_log
 		i2cdetect
 		led_control
-<<<<<<< HEAD
-		mft
-=======
->>>>>>> stable1.11.3
 		mixer
 		motor_ramp
 		motor_test
@@ -134,18 +111,10 @@ px4_add_board(
 		top
 		topic_listener
 		tune_control
-<<<<<<< HEAD
-		uorb
-=======
->>>>>>> stable1.11.3
 		usb_connected
 		ver
 		work_queue
 	EXAMPLES
-<<<<<<< HEAD
-		fake_gps
-=======
->>>>>>> stable1.11.3
 		fake_magnetometer
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello

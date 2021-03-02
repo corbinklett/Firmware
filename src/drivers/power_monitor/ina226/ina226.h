@@ -207,7 +207,11 @@ private:
 
 	Battery 		  _battery;
 	uORB::Subscription  _actuators_sub{ORB_ID(actuator_controls_0)};
+<<<<<<< HEAD
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
+=======
+	uORB::Subscription  _parameter_update_sub{ORB_ID(parameter_update)};
+>>>>>>> stable1.11.3
 
 	int read(uint8_t address, int16_t &data);
 	int write(uint8_t address, uint16_t data);

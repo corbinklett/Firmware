@@ -313,6 +313,28 @@ bool FlightTaskAuto::_evaluateTriplets()
 		_yawspeed_setpoint = NAN;
 	}
 
+<<<<<<< HEAD:src/modules/flight_mode_manager/tasks/Auto/FlightTaskAuto.cpp
+=======
+	// Calculate the current vehicle state and check if it has updated.
+	State previous_state = _current_state;
+	_current_state = _getCurrentState();
+
+	if (triplet_update || (_current_state != previous_state) || _current_state == State::offtrack) {
+		_updateInternalWaypoints();
+		_mission_gear = _sub_triplet_setpoint.get().current.landing_gear;
+	}
+
+	if (_param_com_obs_avoid.get()
+	    && _sub_vehicle_status.get().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+		_obstacle_avoidance.updateAvoidanceDesiredWaypoints(_triplet_target, _yaw_setpoint, _yawspeed_setpoint,
+				_triplet_next_wp,
+				_sub_triplet_setpoint.get().next.yaw,
+				_sub_triplet_setpoint.get().next.yawspeed_valid ? _sub_triplet_setpoint.get().next.yawspeed : NAN,
+				_ext_yaw_handler != nullptr && _ext_yaw_handler->is_active(), _sub_triplet_setpoint.get().current.type);
+		_obstacle_avoidance.checkAvoidanceProgress(_position, _triplet_prev_wp, _target_acceptance_radius, _closest_pt);
+	}
+
+>>>>>>> stable1.11.3:src/lib/flight_tasks/tasks/Auto/FlightTaskAuto.cpp
 	return true;
 }
 

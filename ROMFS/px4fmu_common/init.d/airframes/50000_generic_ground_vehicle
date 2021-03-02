@@ -10,6 +10,10 @@
 #
 # @maintainer
 #
+<<<<<<< HEAD
+=======
+# @board intel_aerofc-v1 exclude
+>>>>>>> stable1.11.3
 # @board bitcraze_crazyflie exclude
 #
 

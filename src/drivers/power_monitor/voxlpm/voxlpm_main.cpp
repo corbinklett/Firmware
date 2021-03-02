@@ -47,7 +47,11 @@ I2CSPIDriverBase *VOXLPM::instantiate(const BusCLIArguments &cli, const BusInsta
 		return nullptr;
 	}
 
+<<<<<<< HEAD
 	if (cli.keep_running) {
+=======
+	if (cli.custom1 == 1) {
+>>>>>>> stable1.11.3
 		if (OK != instance->force_init()) {
 			PX4_INFO("Failed to init voxlpm type: %d on bus: %d, but will try again periodically.", (VOXLPM_CH_TYPE)cli.type,
 				 iterator.bus());
@@ -69,7 +73,11 @@ VOXLPM::print_usage()
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
 	PRINT_MODULE_USAGE_PARAM_STRING('T', "VBATT", "VBATT|P5VDC|P12VDC", "Type", true);
+<<<<<<< HEAD
 	PRINT_MODULE_USAGE_PARAMS_I2C_KEEP_RUNNING_FLAG();
+=======
+	PRINT_MODULE_USAGE_PARAM_FLAG('K', "if initialization (probing) fails, keep retrying periodically", true);
+>>>>>>> stable1.11.3
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
@@ -83,7 +91,7 @@ voxlpm_main(int argc, char *argv[])
 	cli.type = VOXLPM_CH_TYPE_VBATT;
 	cli.support_keep_running = true;
 
-	while ((ch = cli.getopt(argc, argv, "T:")) != EOF) {
+	while ((ch = cli.getopt(argc, argv, "KT:")) != EOF) {
 		switch (ch) {
 		case 'T':
 			if (strcmp(cli.optarg(), "VBATT") == 0) {
@@ -100,6 +108,10 @@ voxlpm_main(int argc, char *argv[])
 				return -1;
 			}
 
+			break;
+
+		case 'K': // keep retrying
+			cli.custom1 = 1;
 			break;
 		}
 	}
