@@ -214,7 +214,8 @@ ALL_CONFIG_TARGETS := $(shell find boards -maxdepth 3 -mindepth 3 ! -name '*comm
 
 # All targets.
 $(ALL_CONFIG_TARGETS):
-	@$(eval PX4_CONFIG = $<)
+	@$(eval PX4_CONFIG = $@)
+	echo PX4_CONFIG
 	@$(eval CMAKE_ARGS += -DCONFIG=$(PX4_CONFIG))
 	@$(call cmake-build,$(PX4_CONFIG)$(BUILD_DIR_SUFFIX))
 

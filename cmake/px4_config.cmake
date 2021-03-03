@@ -55,7 +55,6 @@ if(NOT PX4_CONFIG_FILE)
 			list(GET config 2 label)
 
 			set(board "${vendor}${model}")
-
 			# <VENDOR>_<MODEL>_<LABEL> (eg px4_fmu-v2_default)
 			# <VENDOR>_<MODEL>_default (eg px4_fmu-v2) # allow skipping label if "default"
 			if ((${CONFIG} MATCHES "${vendor}_${model}_${label}") OR # match full vendor, model, label
