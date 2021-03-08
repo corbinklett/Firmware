@@ -73,9 +73,9 @@ static void usage(const char *reason);
 
 
 /**
- * Control hover of the Eflite mini.
- * This controller commands the vehicle to maintain a steady attitude at
- * wherever the controller is initiated.
+ * CK: Control hover of the Eflite mini.
+ * CK: This controller commands the vehicle to maintain a steady attitude at
+ * wherever the controller is initiated. Set point is zero angular rate.
  *
  * Control roll and pitch angle.
  *
@@ -268,7 +268,6 @@ int fixedwing_control_thread_main(int argc, char *argv[])
 	struct actuator_controls_s actuators;
 	memset(&actuators, 0, sizeof(actuators));
 
-
 	/* publish actuator controls with zero values */
 	for (unsigned i = 0; i < actuator_controls_s::NUM_ACTUATOR_CONTROLS; i++) {
 		actuators.control[i] = 0.0f;
@@ -420,7 +419,7 @@ usage(const char *reason)
  * The actual stack size should be set in the call
  * to px4_task_spawn_cmd().
  */
-int ex_fixedwing_control_main(int argc, char *argv[])
+int ck_hover_c_main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		usage("missing command");
