@@ -187,9 +187,10 @@ void control_heading(const struct vehicle_global_position_s *pos, const struct p
 int parameters_init(struct param_handles *handles)
 {
 	/* PID parameters */
-	handles->hdng_p 	=	param_find("EXFW_HDNG_P");
-	handles->roll_p 	=	param_find("EXFW_ROLL_P");
-	handles->pitch_p 	=	param_find("EXFW_PITCH_P");
+	/*handles->hdng_p 	=	param_find("EXFW_HDNG_P");*/
+	handles->roll_p 	=	param_find("CK_ROLL_P");
+	handles->pitch_p 	=	param_find("CK_PITCH_P");
+	handles->yaw_p		= 	param_find("CK_YAW_P");
 
 	return 0;
 }
@@ -205,7 +206,7 @@ int parameters_update(const struct param_handles *handles, struct params *parame
 
 
 /* Main Thread */
-int fixedwing_control_thread_main(int argc, char *argv[])
+int ck_hover_ctrl_thread_main(int argc, char *argv[])
 {
 	/* read arguments */
 	bool verbose = false;
@@ -217,31 +218,11 @@ int fixedwing_control_thread_main(int argc, char *argv[])
 	}
 
 	/* welcome user (warnx prints a line, including an appended\n, with variable arguments */
-	warnx("[example fixedwing control] started");
+	warnx("[ck hover control] started");
 
 	/* initialize parameters, first the handles, then the values */
-	parameters_init(&ph);
+	parameters_init(&ph); // parameter handle?
 	parameters_update(&ph, &p);
-
-
-	/*
-	 * PX4 uses a publish/subscribe design pattern to enable
-	 * multi-threaded communication.
-	 *
-	 * The most elegant aspect of this is that controllers and
-	 * other processes can either 'react' to new data, or run
-	 * at their own pace.
-	 *
-	 * PX4 developer guide:
-	 * https://pixhawk.ethz.ch/px4/dev/shared_object_communication
-	 *
-	 * Wikipedia description:
-	 * http://en.wikipedia.org/wiki/Publish–subscribe_pattern
-	 *
-	 */
-
-
-
 
 	/*
 	 * Declare and safely initialize all structs to zero.
@@ -283,7 +264,7 @@ int fixedwing_control_thread_main(int argc, char *argv[])
 
 	/* subscribe to topics. */
 	int att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
-	int global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position));
+	/* int global_pos_sub = orb_subscribe(ORB_ID(vehicle_global_position)); */
 	int manual_control_setpoint_sub = orb_subscribe(ORB_ID(manual_control_setpoint));
 	int vstatus_sub = orb_subscribe(ORB_ID(vehicle_status));
 	int global_sp_sub = orb_subscribe(ORB_ID(position_setpoint_triplet));
@@ -333,7 +314,6 @@ int fixedwing_control_thread_main(int argc, char *argv[])
 
 			/* only run controller if attitude changed */
 			if (fds[0].revents & POLLIN) {
-
 
 				/* Check if there is a new position measurement or position setpoint */
 				bool pos_updated;
@@ -409,7 +389,7 @@ usage(const char *reason)
 		fprintf(stderr, "%s\n", reason);
 	}
 
-	fprintf(stderr, "usage: ex_fixedwing_control {start|stop|status}\n\n");
+	fprintf(stderr, "usage: ck_hover_ctrl {start|stop|status}\n\n");
 }
 
 /**
@@ -420,7 +400,7 @@ usage(const char *reason)
  * The actual stack size should be set in the call
  * to px4_task_spawn_cmd().
  */
-int ex_fixedwing_control_main(int argc, char *argv[])
+int ck_hover_ctrl_main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		usage("missing command");
@@ -430,17 +410,17 @@ int ex_fixedwing_control_main(int argc, char *argv[])
 	if (!strcmp(argv[1], "start")) {
 
 		if (thread_running) {
-			printf("ex_fixedwing_control already running\n");
+			printf("ck_hover_ctrl already running\n");
 			/* this is not an error */
 			return 0;
 		}
 
 		thread_should_exit = false;
-		deamon_task = px4_task_spawn_cmd("ex_fixedwing_control",
+		deamon_task = px4_task_spawn_cmd("ck_hover_ctrl",
 						 SCHED_DEFAULT,
 						 SCHED_PRIORITY_MAX - 20,
 						 2048,
-						 fixedwing_control_thread_main,
+						 ck_hover_ctrl_thread_main,
 						 (argv) ? (char *const *)&argv[2] : (char *const *)nullptr);
 		thread_running = true;
 		return 0;
@@ -453,10 +433,10 @@ int ex_fixedwing_control_main(int argc, char *argv[])
 
 	if (!strcmp(argv[1], "status")) {
 		if (thread_running) {
-			printf("\tex_fixedwing_control is running\n");
+			printf("\tck_hover_ctrl is running\n");
 
 		} else {
-			printf("\tex_fixedwing_control not started\n");
+			printf("\tck_hover_ctrl not started\n");
 		}
 
 		return 0;
